@@ -3,6 +3,9 @@
 // 2016-10-31 papa Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
 // 2019-02-28 jp112sdl (Creative Commons)
 //- -----------------------------------------------------------------------------------------------------------------------
+// 2020-04-20 BME680 test device, HMSteve (cc)
+//- -----------------------------------------------------------------------------------------------------------------------
+
 // #define NDEBUG   // disable all serial debug messages  //necessary to fit 328p!!!
 // #define USE_CC1101_ALT_FREQ_86835  //use alternative frequency to compensate not correct working cc1101 modules
 #define SENSOR_ONLY
