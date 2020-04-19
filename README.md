@@ -1,11 +1,14 @@
 
 # Test-Device fuer Indoor Air Quality Sensor BME680
 
-Vielen Dank an TomMajor und jp112sdl, auf deren Arbeit dieses Projekt weitgehend aufbaut!
+Vielen Dank an Jerome (jp112sdl) und TomMajor, auf deren Arbeit dieses Projekt weitgehend aufbaut!
 
+Ziel ist ein Device, das neben den Messwerten des BME680 Referenzmesswerte alternativer Sensoren ermittelt, um das Verhalten des BME680 zu vergleichen.
+
+- Hardware AskSin-Stadard (Mega328p, I2C-Sensoren) wie ueblich, abschaltbares CC1101-Modul
 - Es wird neben dem BME680 in der aktuellen Ausbaustufe ein SHT31 fuer Temperatur und Feuchte genutzt.
-- Kuenftig soll ein BMP280 und ein SGP30 ergaenzt werden, sofern der Speicher des Mega328p ausreicht.
-- Das rudimentaere Addon stellt die Werte aller Sensoren in der CCU bereit, um darauf basierende Auswertung/Logging fuer die Zeitreihengewinnung zwecks Vergleich des Sensorverhaltens nutzen zu koennen.
+- Kuenftig soll ein BMP280 und ein SGP30 ergaenzt werden, sofern der Speicher des 328p ausreicht.
+- Das rudimentaere Addon stellt die Werte aller Sensoren in der CCU bereit, um hier existierendes Logging fuer die Zeitreihengewinnung zwecks anschliessenden Vergleiches der Sensorverhalten nutzen zu koennen.
 
 
 
