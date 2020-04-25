@@ -64,9 +64,9 @@ public:
     DHEXLN(_bme680.getChipID());
 
       // oversampling: humidity = x1, temperature = x2, pressure = x16
-    _bme680.setOversampling(BME680_OVERSAMPLING_X4, BME680_OVERSAMPLING_X4, BME680_OVERSAMPLING_X8);
+    _bme680.setOversampling(BME680_OVERSAMPLING_X1, BME680_OVERSAMPLING_X2, BME680_OVERSAMPLING_X16);
     _bme680.setIIRFilter(BME680_FILTER_3);
-    _bme680.setGasOn(300, 300); // 300 degree Celsius and 500 milliseconds; please check in debug mode whether '-> Gas heat_stab_r   = 1' is achieved. If '-> Gas heat_stab_r   = 0' then the heating time is to short or the temp target too high
+    _bme680.setGasOn(300, 100); // 300 degree Celsius and 500 milliseconds; please check in debug mode whether '-> Gas heat_stab_r   = 1' is achieved. If '-> Gas heat_stab_r   = 0' then the heating time is to short or the temp target too high
     _bme680.setForcedMode();
 
     _max_gas_resistance = 0;
@@ -98,6 +98,7 @@ public:
 
   void measure (uint16_t height) {
     if (_present == true) {
+      //int32_t temp(NAN), hum(NAN), pres(NAN);
       float temp(NAN), hum(NAN), pres(NAN);
       uint32_t gas = 0;
 
@@ -112,7 +113,6 @@ public:
       temp = _bme680.readTemperature();
       pres = _bme680.readPressure();
       hum =  _bme680.readHumidity();
-
 
 
       gas = 0;

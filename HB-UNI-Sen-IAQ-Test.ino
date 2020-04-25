@@ -6,7 +6,7 @@
 // 2020-04-20 BME680 test device, HMSteve (cc)
 //- -----------------------------------------------------------------------------------------------------------------------
 
-// #define NDEBUG   // disable all serial debug messages  //necessary to fit 328p!!!
+ #define NDEBUG   // disable all serial debug messages  //necessary to fit 328p!!!
 // #define USE_CC1101_ALT_FREQ_86835  //use alternative frequency to compensate not correct working cc1101 modules
 #define SENSOR_ONLY
 
@@ -20,6 +20,7 @@
 #include "sensors/sens_bme680.h"
 #include "sensors/tmBattery.h"  //SG: added from Tom's UniSensor project
 #include "sensors/Sens_SHT31.h"
+//#include "sensors/sens_bmp280.h"
 
 #define LED_PIN 6
 #define CONFIG_BUTTON_PIN 5
@@ -136,6 +137,7 @@ class WeatherChannel : public Channel<Hal, List1, EmptyList, List4, PEERS_PER_CH
     WeatherEventMsg msg;
     Sens_Bme680<0x77>   bme680; //SG: changed from default <> to <0x77> for Adafruit sensor 
     Sens_SHT31<0x44>    sht31;  //SG: GY breakout board standard
+    //Sens_Bmp280         bmp280;
     uint16_t        millis;
 
   public:
@@ -149,10 +151,11 @@ class WeatherChannel : public Channel<Hal, List1, EmptyList, List4, PEERS_PER_CH
       clock.add(*this);
       bme680.measure(this->device().getList0().height());
       sht31.measure();
+      //bmp280.measure();
             
       DPRINT("corrected T/H = ");DDEC(bme680.temperature()+OFFSETtemp);DPRINT("/");DDECLN(bme680.humidity()+OFFSEThumi);
       DPRINT("ref temp / hum = ");DDEC(sht31.temperature());DPRINT("/");DDECLN(sht31.humidity());
-     
+     // DPRINT("ref pressure = ");DDECLN(bmp280.pressure());     
       // msg.init( msgcnt,bme680.temperature()+OFFSETtemp,bme680.pressureNN(),bme680.humidity()+OFFSEThumi,bme680.iaq_percent(), bme680.iaq_state(), device().battery().low(), device().battery().current());
       msg.init( msgcnt,bme680.temperature()+OFFSETtemp,bme680.pressureNN(),bme680.humidity()+OFFSEThumi,bme680.iaq_percent(), bme680.iaq_state(), device().battery().low(), device().battery().current() / 100, sht31.temperature(), sht31.humidity(), 10420, 42);
 
@@ -166,6 +169,7 @@ class WeatherChannel : public Channel<Hal, List1, EmptyList, List4, PEERS_PER_CH
       Channel::setup(dev, number, addr);
       bme680.init();
       sht31.init();
+      //bmp280.init();
       sysclock.add(*this);
     }
 
