@@ -114,7 +114,6 @@ public:
       pres = _bme680.readPressure();
       hum =  _bme680.readHumidity();
 
-
       gas = 0;
       for (uint8_t c = 0; c < AVG_COUNT; c++) {
         while (! (status.newDataFlag == 1)) {

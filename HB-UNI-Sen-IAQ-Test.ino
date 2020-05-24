@@ -6,11 +6,13 @@
 // 2020-04-20 BME680 test device, HMSteve (cc)
 //- -----------------------------------------------------------------------------------------------------------------------
 
- #define NDEBUG   // disable all serial debug messages  //necessary to fit 328p!!!
+//#define NDEBUG   // disable all serial debug messages  //necessary to fit 328p!!!
 // #define USE_CC1101_ALT_FREQ_86835  //use alternative frequency to compensate not correct working cc1101 modules
 #define SENSOR_ONLY
 
 #define EI_NOTEXTERNAL
+#define M1284P // select pin config for ATMega1284p board
+
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>
 #include <LowPower.h>
@@ -18,15 +20,38 @@
 
 #include <MultiChannelDevice.h>
 #include "sensors/sens_bme680.h"
-#include "sensors/tmBattery.h"  //SG: added from Tom's UniSensor project
+#include "sensors/sens_bmp280.h"
 #include "sensors/Sens_SHT31.h"
-//#include "sensors/sens_bmp280.h"
+#include "sensors/Sens_SGP30.h"
+#include "sensors/tmBattery.h"  //SG: added from Tom's UniSensor project
 
-#define LED_PIN 6
-#define CONFIG_BUTTON_PIN 5
+#if defined M1284P
+ // Stephans AskSinPP 1284 Board v1.1
+ #define CC1101_CS_PIN       4
+ #define CC1101_GDO0_PIN     2
+ #define CC1101_SCK_PIN      7 
+ #define CC1101_MOSI_PIN     5 
+ #define CC1101_MISO_PIN     6 
+ #define LED_PIN 14             //LEDs on PD6 (Arduino Pin 14) and PD7 (Arduino Pin 15) 
+ #define LED_PIN2 15
+ #define CONFIG_BUTTON_PIN 13
+#else
+  // Stephans AskSinPP Universal Board v1.0
+  #define LED_PIN 6
+  #define CONFIG_BUTTON_PIN 5
+#endif
+
+
 #define PEERS_PER_CHANNEL 6
 #define SAMPLINGINTERVALL_IN_SECONDS 11  //SG: changed from 240 for testing
-#define BATT_SENSOR tmBatteryResDiv<A0, A1, 5700>  //SG: taken from Tom's Unisensor01
+//#define BATT_SENSOR tmBatteryResDiv<A0, A1, 5700>  //SG: taken from Tom's Unisensor01
+// tmBatteryLoad: sense pin A0, activation pin D9, Faktor = Rges/Rlow*1000, z.B. 10/30 Ohm, Faktor 40/10*1000 = 4000, 200ms Belastung vor Messung
+// 1248p has 2.56V ARef, 328p has 1.1V ARef
+#if defined M1284P
+  #define BATT_SENSOR tmBatteryLoad<A6, 12, (uint16_t)(4000.0*2.56/1.1), 200>  
+#else
+  #define BATT_SENSOR tmBatteryLoad<A6, 12, 4000, 200>  
+#endif
 
 //-----------------------------------------------------------------------------------------
 
@@ -55,8 +80,14 @@ const struct DeviceInfo PROGMEM devinfo = {
 /**
    Configure the used hardware
 */
-typedef AvrSPI<10, 11, 12, 13> SPIType;
-typedef Radio<SPIType, 2> RadioType;
+#if defined M1284P
+  typedef AvrSPI<CC1101_CS_PIN, CC1101_MOSI_PIN, CC1101_MISO_PIN, CC1101_SCK_PIN> SPIType;
+  typedef Radio<SPIType, CC1101_GDO0_PIN> RadioType;
+#else
+  typedef AvrSPI<10, 11, 12, 13> SPIType;
+  typedef Radio<SPIType, 2> RadioType;
+#endif
+
 typedef StatusLed<LED_PIN> LedType;
 //typedef AskSin<LedType, BatterySensor, RadioType> BaseHal;
 typedef AskSin<LedType, BATT_SENSOR, RadioType> BaseHal;
@@ -70,8 +101,8 @@ class Hal : public BaseHal {
       radio.initReg(CC1101_FREQ1, 0x65);
       radio.initReg(CC1101_FREQ0, 0xE8);
 #endif
-      // measure battery every 1h
-      battery.init(seconds2ticks(60UL * 60), sysclock);  // 60UL * 60 for 1hour
+      // measure battery every a*b*c seconds
+      battery.init(seconds2ticks(60UL * 60 * 6), sysclock);  // 60UL * 60 for 1hour
       battery.low(18);
       battery.critical(15);
     }
@@ -136,8 +167,9 @@ class WeatherEventMsg : public Message {
 class WeatherChannel : public Channel<Hal, List1, EmptyList, List4, PEERS_PER_CHANNEL, SensorList0>, public Alarm {
     WeatherEventMsg msg;
     Sens_Bme680<0x77>   bme680; //SG: changed from default <> to <0x77> for Adafruit sensor 
-    Sens_SHT31<0x44>    sht31;  //SG: GY breakout board standard
-    //Sens_Bmp280         bmp280;
+    Sens_Bmp280         bmp280; //SG: needs to be set to address 0x76 by grounding SDO on Adafruit board
+    Sens_SHT31<0x44>    sht31;  //SG: GY breakout board standard address
+    Sens_SGP30          sgp30;
     uint16_t        millis;
 
   public:
@@ -150,14 +182,16 @@ class WeatherChannel : public Channel<Hal, List1, EmptyList, List4, PEERS_PER_CH
       tick = delay();
       clock.add(*this);
       bme680.measure(this->device().getList0().height());
+      bmp280.measure(this->device().getList0().height());
       sht31.measure();
-      //bmp280.measure();
-            
+      sgp30.measure((float)sht31.temperature()/10.0, (float)sht31.humidity());
+              
       DPRINT("corrected T/H = ");DDEC(bme680.temperature()+OFFSETtemp);DPRINT("/");DDECLN(bme680.humidity()+OFFSEThumi);
       DPRINT("ref temp / hum = ");DDEC(sht31.temperature());DPRINT("/");DDECLN(sht31.humidity());
-     // DPRINT("ref pressure = ");DDECLN(bmp280.pressure());     
+      DPRINT("ref pressure = ");DDECLN(bmp280.pressure());    
+      DPRINT("ref pressureNN = ");DDECLN(bmp280.pressureNN());   
       // msg.init( msgcnt,bme680.temperature()+OFFSETtemp,bme680.pressureNN(),bme680.humidity()+OFFSEThumi,bme680.iaq_percent(), bme680.iaq_state(), device().battery().low(), device().battery().current());
-      msg.init( msgcnt,bme680.temperature()+OFFSETtemp,bme680.pressureNN(),bme680.humidity()+OFFSEThumi,bme680.iaq_percent(), bme680.iaq_state(), device().battery().low(), device().battery().current() / 100, sht31.temperature(), sht31.humidity(), 10420, 42);
+      msg.init( msgcnt,bme680.temperature()+OFFSETtemp,bme680.pressureNN(),bme680.humidity()+OFFSEThumi,bme680.iaq_percent(), bme680.iaq_state(), device().battery().low(), device().battery().current() / 100, sht31.temperature(), sht31.humidity(), bmp280.pressureNN(), sgp30.TVOC());
 
       if (msgcnt % 10 == 2) device().sendPeerEvent(msg, *this); else device().broadcastEvent(msg, *this);
     }
@@ -169,7 +203,8 @@ class WeatherChannel : public Channel<Hal, List1, EmptyList, List4, PEERS_PER_CH
       Channel::setup(dev, number, addr);
       bme680.init();
       sht31.init();
-      //bmp280.init();
+      bmp280.init();
+      sgp30.init();
       sysclock.add(*this);
     }
 
@@ -201,13 +236,15 @@ ConfigButton<IAQDevice> cfgBtn(sdev);
 
 void setup () {
   //SG: switch on MOSFET to power CC1101
-  pinMode(4, OUTPUT);
-  digitalWrite (4, LOW);
+  //pinMode(4, OUTPUT);
+  //digitalWrite (4, LOW);
+
   
   DINIT(57600, ASKSIN_PLUS_PLUS_IDENTIFIER);
   sdev.init(hal);
   buttonISR(cfgBtn, CONFIG_BUTTON_PIN);
   sdev.initDone();
+
 }
 
 void loop() {

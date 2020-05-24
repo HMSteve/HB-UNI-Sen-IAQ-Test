@@ -14,11 +14,12 @@ namespace as {
 
 // https://github.com/adafruit/Adafruit_BMP280_Library
 class Sens_Bmp280 : public Temperature, public Pressure {
-  Adafruit_BMP280 _bmp;
+  Adafruit_BMP280 _bmp280;
+  uint16_t _pressureNN;
 public:
-  Bmp280 () {}
+  Sens_Bmp280 () {}
   void init () {
-    _present = _bmp.begin();
+    _present = _bmp280.begin();
 
 //    if(_present == true) {
 //      _bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
@@ -31,12 +32,15 @@ public:
     }
 
 
-  void measure (__attribute__((unused)) bool async=false) {
+  void measure (uint16_t altitude) {
     if( present() == true ) {
-      _temperature = _bmp.readTemperature() * 10;
-      _pressure = _bmp.readPressure() / 100;
+      _temperature = _bmp280.readTemperature() * 10;
+      _pressure = _bmp280.readPressure() / 10;
+      _pressureNN = _bmp280.seaLevelForAltitude(altitude, _pressure);
     }
   }
+
+  uint16_t pressureNN ()  { return _pressureNN; }
 };
 
 }
