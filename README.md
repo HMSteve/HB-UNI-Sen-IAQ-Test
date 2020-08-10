@@ -5,9 +5,8 @@ Vielen Dank an Jerome (jp112sdl) und TomMajor, auf deren Arbeit dieses Projekt w
 
 Ziel ist ein Device, das neben den Messwerten des BME680 Referenzmesswerte alternativer Sensoren ermittelt, um das Verhalten des BME680 zu vergleichen.
 
-- Hardware AskSin-Stadard (Mega328p, I2C-Sensoren) wie ueblich, abschaltbares CC1101-Modul
-- Es wird neben dem BME680 in der aktuellen Ausbaustufe ein SHT31 fuer Temperatur und Feuchte genutzt.
-- Kuenftig soll ein BMP280 und ein SGP30 ergaenzt werden, sofern der Speicher des 328p ausreicht.
+- Hardware basierend auf ATMega1248p wg dubioser Speicherplatzprobleme beim 328p
+- Es wird neben dem BME680 ein SHT31 fuer Temperatur und Feuchte, ein BMP280 fuer Luftdruck und ein SGP30 fuer VOC genutzt.
 - Das rudimentaere Addon stellt die Werte aller Sensoren in der CCU bereit, um hier existierendes Logging fuer die Zeitreihengewinnung zwecks anschliessenden Vergleiches der Sensorverhalten nutzen zu koennen.
 
 
