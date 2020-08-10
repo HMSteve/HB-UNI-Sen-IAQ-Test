@@ -2,7 +2,7 @@
 <device version="2" rx_modes="CONFIG,WAKEUP,LAZY_CONFIG" cyclic_timeout="14800">
   <supported_types>
     <type name="HB-UNI-Sen-IAQ-Test" id="HB-UNI-Sen-IAQ-Test">
-      <parameter index="9.0"  size="1.0" cond_op="GE" const_value="0x10"/>
+      <parameter index="9.0"  size="1.0" cond_op="GE" const_value="0x11"/>
       <parameter index="10.0" size="2.0" const_value="0xF3D3" />
     </type>
   </supported_types>
@@ -162,6 +162,16 @@
             <field id="AutoconfRoles" value="WEATHER" />
           </description>
         </parameter>
+        <parameter id="REF_ECO2" operations="read,event">
+          <logical type="float" min="400.0" max="60000.0" unit="ppm" />
+          <physical type="integer" interface="command" value_id="REF_ECO2">
+            <event frame="WEATHER_EVENT" />
+          </physical>
+          <conversion type="float_integer_scale" factor="1.0" />
+          <description>
+            <field id="AutoconfRoles" value="WEATHER" />
+          </description>
+        </parameter>
       </paramset>
       <paramset type="LINK" id="iaq_ch_link" />
     </channel>
@@ -178,6 +188,7 @@
       <parameter type="integer" index="19.0" size="1.0" param="REF_HUMIDITY" />
       <parameter type="integer" index="20.0" size="2.0" param="REF_AIR_PRESSURE" />
       <parameter type="integer" index="22.0" size="2.0" param="REF_TVOC" />
+      <parameter type="integer" index="24.0" size="2.0" param="REF_ECO2" />
     </frame>
   </frames>
   <paramset_defs></paramset_defs>

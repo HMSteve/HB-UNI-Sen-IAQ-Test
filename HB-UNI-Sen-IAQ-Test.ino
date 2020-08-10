@@ -29,12 +29,13 @@
  // Stephans AskSinPP 1284 Board v1.1
  #define CC1101_CS_PIN       4
  #define CC1101_GDO0_PIN     2
- #define CC1101_SCK_PIN      7 
- #define CC1101_MOSI_PIN     5 
- #define CC1101_MISO_PIN     6 
- #define LED_PIN 14             //LEDs on PD6 (Arduino Pin 14) and PD7 (Arduino Pin 15) 
+ #define CC1101_SCK_PIN      7
+ #define CC1101_MOSI_PIN     5
+ #define CC1101_MISO_PIN     6
+ #define LED_PIN 14             //LEDs on PD6 (Arduino Pin 14) and PD7 (Arduino Pin 15)
  #define LED_PIN2 15
  #define CONFIG_BUTTON_PIN 13
+ #define CC1101_PWR_SW_PIN 27
 #else
   // Stephans AskSinPP Universal Board v1.0
   #define LED_PIN 6
@@ -48,9 +49,9 @@
 // tmBatteryLoad: sense pin A0, activation pin D9, Faktor = Rges/Rlow*1000, z.B. 10/30 Ohm, Faktor 40/10*1000 = 4000, 200ms Belastung vor Messung
 // 1248p has 2.56V ARef, 328p has 1.1V ARef
 #if defined M1284P
-  #define BATT_SENSOR tmBatteryLoad<A6, 12, (uint16_t)(4000.0*2.56/1.1), 200>  
+  #define BATT_SENSOR tmBatteryLoad<A6, 12, (uint16_t)(4000.0*2.56/1.1), 200>
 #else
-  #define BATT_SENSOR tmBatteryLoad<A6, 12, 4000, 200>  
+  #define BATT_SENSOR tmBatteryLoad<A6, 12, 4000, 200>
 #endif
 
 //-----------------------------------------------------------------------------------------
@@ -72,7 +73,7 @@ const struct DeviceInfo PROGMEM devinfo = {
   {0xf3, 0xd3, 0x03},     // Device ID
   "SGIAQTST03",           // Device Serial
   {0xf3, 0xd3},           // Device Model Indoor //orig 0xf1d1
-  0x10,                   // Firmware Version
+  0x11,                   // Firmware Version //new version for addl dp eCO2
   as::DeviceType::THSensor, // Device Type
   {0x01, 0x00}            // Info Bytes
 };
@@ -141,13 +142,13 @@ class SensorList0 : public RegList0<Reg0> {
 
 class WeatherEventMsg : public Message {
   public:
-    void init(uint8_t msgcnt, int16_t temp, uint16_t airPressure, uint8_t humidity, uint8_t iaq_percent, uint8_t iaq_state, bool batlow, uint8_t volt, int16_t ref_temperature, uint8_t ref_humidity, uint16_t ref_airPressure, uint16_t ref_tvoc) {
+    void init(uint8_t msgcnt, int16_t temp, uint16_t airPressure, uint8_t humidity, uint8_t iaq_percent, uint8_t iaq_state, bool batlow, uint8_t volt, int16_t ref_temperature, uint8_t ref_humidity, uint16_t ref_airPressure, uint16_t ref_tvoc, uint16_t ref_eco2) {
       uint8_t t1 = (temp >> 8) & 0x7f;
       uint8_t t2 = temp & 0xff;
       if ( batlow == true ) {
         t1 |= 0x80; // set bat low bit
       }
-      Message::init(0x18, msgcnt, 0x70, BIDI | WKMEUP, t1, t2);
+      Message::init(0x1A, msgcnt, 0x70, BIDI | WKMEUP, t1, t2);
       pload[0] = (airPressure >> 8) & 0xff;
       pload[1] = airPressure & 0xff;
       pload[2] = humidity & 0xff;
@@ -158,15 +159,17 @@ class WeatherEventMsg : public Message {
       pload[7] = ref_temperature & 0xff;
       pload[8] = ref_humidity & 0xff;
       pload[9] = (ref_airPressure >> 8) & 0xff;
-      pload[10] = ref_airPressure & 0xff; 
+      pload[10] = ref_airPressure & 0xff;
       pload[11] = (ref_tvoc >> 8) & 0xff;
-      pload[12] = ref_tvoc & 0xff;      
+      pload[12] = ref_tvoc & 0xff;
+      pload[13] = (ref_eco2 >> 8) & 0xff;
+      pload[14] = ref_eco2 & 0xff;      
     }
 };
 
 class WeatherChannel : public Channel<Hal, List1, EmptyList, List4, PEERS_PER_CHANNEL, SensorList0>, public Alarm {
     WeatherEventMsg msg;
-    Sens_Bme680<0x77>   bme680; //SG: changed from default <> to <0x77> for Adafruit sensor 
+    Sens_Bme680<0x77>   bme680; //SG: changed from default <> to <0x77> for Adafruit sensor
     Sens_Bmp280         bmp280; //SG: needs to be set to address 0x76 by grounding SDO on Adafruit board
     Sens_SHT31<0x44>    sht31;  //SG: GY breakout board standard address
     Sens_SGP30          sgp30;
@@ -185,13 +188,15 @@ class WeatherChannel : public Channel<Hal, List1, EmptyList, List4, PEERS_PER_CH
       bmp280.measure(this->device().getList0().height());
       sht31.measure();
       sgp30.measure((float)sht31.temperature()/10.0, (float)sht31.humidity());
-              
+
       DPRINT("corrected T/H = ");DDEC(bme680.temperature()+OFFSETtemp);DPRINT("/");DDECLN(bme680.humidity()+OFFSEThumi);
       DPRINT("ref temp / hum = ");DDEC(sht31.temperature());DPRINT("/");DDECLN(sht31.humidity());
-      DPRINT("ref pressure = ");DDECLN(bmp280.pressure());    
-      DPRINT("ref pressureNN = ");DDECLN(bmp280.pressureNN());   
+      DPRINT("ref pressure = ");DDECLN(bmp280.pressure());
+      DPRINT("ref pressureNN = ");DDECLN(bmp280.pressureNN());
+      DPRINT("ref TVOC = ");DDECLN(sgp30.TVOC());
+      DPRINT("ref eCO2 = ");DDECLN(sgp30.eCO2());     
       // msg.init( msgcnt,bme680.temperature()+OFFSETtemp,bme680.pressureNN(),bme680.humidity()+OFFSEThumi,bme680.iaq_percent(), bme680.iaq_state(), device().battery().low(), device().battery().current());
-      msg.init( msgcnt,bme680.temperature()+OFFSETtemp,bme680.pressureNN(),bme680.humidity()+OFFSEThumi,bme680.iaq_percent(), bme680.iaq_state(), device().battery().low(), device().battery().current() / 100, sht31.temperature(), sht31.humidity(), bmp280.pressureNN(), sgp30.TVOC());
+      msg.init( msgcnt,bme680.temperature()+OFFSETtemp,bme680.pressureNN(),bme680.humidity()+OFFSEThumi,bme680.iaq_percent(), bme680.iaq_state(), device().battery().low(), device().battery().current() / 100, sht31.temperature(), sht31.humidity(), bmp280.pressureNN(), sgp30.TVOC(), sgp30.eCO2());
 
       if (msgcnt % 10 == 2) device().sendPeerEvent(msg, *this); else device().broadcastEvent(msg, *this);
     }
@@ -236,10 +241,10 @@ ConfigButton<IAQDevice> cfgBtn(sdev);
 
 void setup () {
   //SG: switch on MOSFET to power CC1101
-  //pinMode(4, OUTPUT);
-  //digitalWrite (4, LOW);
+  pinMode(CC1101_PWR_SW_PIN, OUTPUT);
+  digitalWrite (CC1101_PWR_SW_PIN, LOW);
 
-  
+
   DINIT(57600, ASKSIN_PLUS_PLUS_IDENTIFIER);
   sdev.init(hal);
   buttonISR(cfgBtn, CONFIG_BUTTON_PIN);

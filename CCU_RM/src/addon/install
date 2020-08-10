@@ -47,46 +47,35 @@ if [ -z "`cat $webuiFile | grep \"$DEVICE\"`" ]; then
 	sed -i "s/\($webuiSearch\)/\1$webuiInsert/g" $webuiFile
 fi
 
+#### string definition section commented out and retained for reference, no strings defined for test device
+
 #------------------------------------------------------------------------------
 ### Edit stringtable_de.txt ###
-stringtable_deFile="/www/config/stringtable_de.txt"
+# stringtable_deFile="/www/config/stringtable_de.txt"
 
-stringtable_deInsert="WEATHER|SKY_TEMPERATURE\t\${stringTableWeatherSkyTemperature}"
-if [ -z "`cat $stringtable_deFile | grep \"WEATHER|SKY_TEMPERATURE"`" ]; then
-    echo -e $stringtable_deInsert >> $stringtable_deFile
-fi
+# stringtable_deInsert="WEATHER|SKY_TEMPERATURE\t\${stringTableWeatherSkyTemperature}"
+# if [ -z "`cat $stringtable_deFile | grep \"WEATHER|SKY_TEMPERATURE"`" ]; then
+#     echo -e $stringtable_deInsert >> $stringtable_deFile
+# fi
 
-stringtable_deInsert="WEATHER|UV_INDEX\t\${stringTableWeatherUvIndex}"
-if [ -z "`cat $stringtable_deFile | grep \"WEATHER|UV_INDEX"`" ]; then
-    echo -e $stringtable_deInsert >> $stringtable_deFile
-fi
 
 #------------------------------------------------------------------------------
 ### Edit German translate.lang.stringtable.js ###
-translate_deFile="/www/webui/js/lang/de/translate.lang.stringtable.js"
-translate_deSearch="\"dummy\" : \"\","
+# translate_deFile="/www/webui/js/lang/de/translate.lang.stringtable.js"
+# translate_deSearch="\"dummy\" : \"\","
 
-translate_deInsert="\n    \"stringTableWeatherSkyTemperature\" : \"Himmelstemperatur\","
-if [ -z "`cat $translate_deFile | grep \"stringTableWeatherSkyTemperature\"`" ]; then
-	sed -i "s/\($translate_deSearch\)/\1$translate_deInsert/g" $translate_deFile
-fi
+# translate_deInsert="\n    \"stringTableWeatherSkyTemperature\" : \"Himmelstemperatur\","
+# if [ -z "`cat $translate_deFile | grep \"stringTableWeatherSkyTemperature\"`" ]; then
+# 	sed -i "s/\($translate_deSearch\)/\1$translate_deInsert/g" $translate_deFile
+# fi
 
-translate_deInsert="\n    \"stringTableWeatherUvIndex\" : \"UV-Index\","
-if [ -z "`cat $translate_deFile | grep \"stringTableUvIndex\"`" ]; then
-	sed -i "s/\($translate_deSearch\)/\1$translate_deInsert/g" $translate_deFile
-fi
 
 #------------------------------------------------------------------------------
 ### Edit English translate.lang.stringtable.js ###
-translate_deFile="/www/webui/js/lang/en/translate.lang.stringtable.js"
-translate_deSearch="\"dummy\" : \"\","
+# translate_deFile="/www/webui/js/lang/en/translate.lang.stringtable.js"
+# translate_deSearch="\"dummy\" : \"\","
 
-translate_deInsert="\n    \"stringTableWeatherSkyTemperature\" : \"Sky Temperature\","
-if [ -z "`cat $translate_deFile | grep \"stringTableWeatherSkyTemperature\"`" ]; then
-	sed -i "s/\($translate_deSearch\)/\1$translate_deInsert/g" $translate_deFile
-fi
-
-translate_deInsert="\n    \"stringTableWeatherUvIndex\" : \"UV Index\","
-if [ -z "`cat $translate_deFile | grep \"stringTableUvIndex\"`" ]; then
-	sed -i "s/\($translate_deSearch\)/\1$translate_deInsert/g" $translate_deFile
-fi
+# translate_deInsert="\n    \"stringTableWeatherSkyTemperature\" : \"Sky Temperature\","
+# if [ -z "`cat $translate_deFile | grep \"stringTableWeatherSkyTemperature\"`" ]; then
+# 	sed -i "s/\($translate_deSearch\)/\1$translate_deInsert/g" $translate_deFile
+# fi
